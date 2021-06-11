@@ -1,0 +1,50 @@
+name: Downstream
+
+on:
+  pull_request:
+    branches: [ 'release-*' ]
+
+jobs:
+
+  downstream-serverless:
+    name: Unit Test
+    strategy:
+      fail-fast: false # Keep running if one leg fails.
+      matrix:
+        include:
+          - org: openshift
+            repo: knative-serving
+          - org: openshift
+            repo: knative-eventing
+          - org: openshift
+            repo: knative-client
+          - org: openshift-knative
+            repo: serverless-operator
+          - org: openshift-knative
+            repo: eventing-kafka
+
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: ${{ github.workspace }}
+    steps:
+    - name: Set up Go 1.16.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16.x
+    - name: Install Dependencies
+      run: |
+        go get github.com/google/go-licenses
+    - name: Checkout Upstream
+      uses: actions/checkout@v2
+      with:
+        path: ./src/knative.dev/${{ github.event.repository.name }}
+    - name: Checkout Downstream
+      uses: actions/checkout@v2
+      with:
+        repository: ${{ matrix.org }}/${{ matrix.repo }}
+        path: ./src/${{ matrix.org }}/${{ matrix.repo }}
+    - name: Test Downstream
+      uses: knative-sandbox/actions-downstream-test@v1
+      with:
+        upstream-module: knative.dev/${{ github.event.repository.name }}
+        downstream-module: ${{ matrix.org }}/${{ matrix.repo }}
