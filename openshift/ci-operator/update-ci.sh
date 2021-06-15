@@ -3,7 +3,11 @@
 
 set -Eeuo pipefail
 
-readonly TMPDIR=$(mktemp -d knativePkgXXXX -p /tmp/)
+readonly TMPDIR=$(mktemp -d openshift-knatove-pkg-update-ci-XXXXX -p /tmp/)
+cleanup() {
+  rm -rf "${TMPDIR}"
+}
+trap cleanup EXIT
 fail() { echo; echo "$*"; exit 1; }
 
 cat >> "$TMPDIR"/reporterConfig <<EOF
