@@ -44,12 +44,19 @@ git commit -m ":robot: Triggering CI on branch 'release-next' after synching to 
 git push -f "${OPENSHIFT}" release-next-ci
 
 echo "::debug:: Create a sync PR"
-if command -v hub 2>/dev/null 1>&2; then
-   hub pull-request --no-edit \
-     --labels "kind/sync-fork-to-upstream" \
-     --base "${ORGANISATION}/${REPO_NAME}:release-next" \
-     --head "${ORGANISATION}/${REPO_NAME}:release-next-ci"
+if command -v gh 2>/dev/null 1>&2; then
+  if [ "$(gh pr list --repo "${ORGANISATION}/${REPO_NAME}" \
+    --state open --author @me \
+    --search 'release-next' \
+    --json url | jq length)" -eq 0 ]; then
+
+    gh pr create \
+      --title "$(git show -s --format=%s --no-show-signature)" \
+      --body '' \
+      --repo "${ORGANISATION}/${REPO_NAME}" \
+      --base 'release-next' --head 'release-next-ci'
+  fi
 else
-   echo "::warning:: hub (https://github.com/github/hub) is not installed, so \
+   echo "::warning:: gh (https://github.com/cli/cli) is not installed, so \
 you'll need to create a PR manually." >&2
 fi
