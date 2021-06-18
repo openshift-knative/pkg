@@ -1,77 +1,30 @@
-# Copyright 2020 The Knative Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 name: Downstream
 
 on:
   pull_request:
-    branches: [ 'main', 'master', 'release-*' ]
+    branches: [ 'release-*' ]
 
 jobs:
 
-  downstream-knative:
+  downstream:
     name: Unit Test
     strategy:
       fail-fast: false # Keep running if one leg fails.
       matrix:
         include:
-          - repo: serving
-            org: knative
-          - repo: networking
-            org: knative
-          - repo: eventing
-            org: knative
-          - repo: operator
-            org: knative
-          - repo: client
-            org: knative
-          - repo: discovery
-            org: knative-sandbox
-          - repo: eventing-autoscaler-keda
-            org: knative-sandbox
-          - repo: eventing-awssqs
-            org: knative-sandbox
-          - repo: eventing-ceph
-            org: knative-sandbox
-          - repo: eventing-couchdb
-            org: knative-sandbox
-          - repo: eventing-github
-            org: knative-sandbox
-          - repo: eventing-gitlab
-            org: knative-sandbox
-          - repo: eventing-kafka
-            org: knative-sandbox
-          - repo: eventing-kafka-broker
-            org: knative-sandbox
-          - repo: eventing-natss
-            org: knative-sandbox
-          - repo: eventing-prometheus
-            org: knative-sandbox
-          - repo: eventing-rabbitmq
-            org: knative-sandbox
-          - repo: kn-plugin-admin
-            org: knative-sandbox
-          - repo: net-certmanager
-            org: knative-sandbox
-          - repo: net-contour
-            org: knative-sandbox
-          - repo: net-http01
-            org: knative-sandbox
-          - repo: net-istio
-            org: knative-sandbox
-          - repo: net-kourier
-            org: knative-sandbox
+          - org: openshift
+            repo: knative-serving
+            branch: release-next
+          - org: openshift
+            repo: knative-eventing
+            branch: release-next
+          - org: openshift
+            repo: knative-client
+            branch: release-next
+          - org: openshift-knative
+            repo: eventing-kafka
+            branch: release-next
+
     runs-on: ubuntu-latest
     env:
       GOPATH: ${{ github.workspace }}
@@ -80,9 +33,6 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.16.x
-    - name: Install Dependencies
-      run: |
-        go get github.com/google/go-licenses
     - name: Checkout Upstream
       uses: actions/checkout@v2
       with:
@@ -91,9 +41,10 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: ${{ matrix.org }}/${{ matrix.repo }}
-        path: ./src/knative.dev/${{ matrix.repo }}
+        path: ./src/${{ matrix.org }}/${{ matrix.repo }}
+        ref: ${{ matrix.branch }}
     - name: Test Downstream
       uses: knative-sandbox/actions-downstream-test@v1
       with:
         upstream-module: knative.dev/${{ github.event.repository.name }}
-        downstream-module: knative.dev/${{ matrix.repo }}
+        downstream-module: ${{ matrix.org }}/${{ matrix.repo }}
